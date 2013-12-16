@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     }
     n.getParam("/stream_to_pcd/folder", folder);
     
-	ros::Subscriber sub = n.subscribe("/camera/depth_registered/points", 1, callback);
+	ros::Subscriber sub = n.subscribe("/head_xtion/depth_registered/points", 1, callback);
     counter = 0;
     
     ros::spin();
