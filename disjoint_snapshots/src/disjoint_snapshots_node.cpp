@@ -21,6 +21,7 @@ int main(int argc, char** argv)
     message_filters::Subscriber<sensor_msgs::Image> rgb_sub(n, "/head_xtion/rgb/image_color", 1);
     message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), depth_sub, rgb_sub);
     sync.registerCallback(&disjoint_snapshots::image_callback, &d);
+	ros::Subscriber pcd_sub = n.subscribe("/head_xtion/registered/points", 1, &disjoint_snapshots::pointcloud_callback, &d);
 	ros::Subscriber sub = n.subscribe("/odom", 1, &disjoint_snapshots::geometry_callback, &d);
 
 	std::cout << "Spinning..." << std::endl;

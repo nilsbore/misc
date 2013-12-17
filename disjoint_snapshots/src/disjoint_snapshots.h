@@ -20,6 +20,7 @@
 class disjoint_snapshots {
 private:
 	long int counter;
+	long int pcd_counter;
 	std::string folder;
 	ros::ServiceClient& client;
 	double snapped_x, snapped_y;
@@ -29,6 +30,7 @@ private:
 	double fov;
 	double dist;
 	bool snapshot;
+	bool pcd_snapshot;
 	bool first;
 	ros::Timer timer;
 	ros::NodeHandle& n;
@@ -37,8 +39,8 @@ public:
 	void allow_snapshot(const ros::TimerEvent& e);
 	void image_callback(const sensor_msgs::Image::ConstPtr& depth_msg,
                     	const sensor_msgs::Image::ConstPtr& rgb_msg);
+	void pointcloud_callback(const sensor_msgs::PointCloud2::ConstPtr& msg);
 	disjoint_snapshots(ros::NodeHandle& n, ros::ServiceClient& client, const std::string& folder, double dist);	
 };
-
 
 #endif // DISJOINT_SNAPSHOTS_H

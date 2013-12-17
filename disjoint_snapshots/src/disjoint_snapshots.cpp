@@ -1,7 +1,7 @@
 #include "disjoint_snapshots.h"
 
 disjoint_snapshots::disjoint_snapshots(ros::NodeHandle& n, ros::ServiceClient& client, const std::string& folder, double dist) :
-	n(n), client(client), folder(folder), dist(dist), counter(0), snapshot(false), first(true)
+	n(n), client(client), folder(folder), dist(dist), counter(0), pcd_counter(0), snapshot(false), pcd_snapshot(false), first(true)
 {
 	/*typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
     message_filters::Subscriber<sensor_msgs::Image> depth_sub(n, "/head_xtion/depth/image_raw", 1);
@@ -65,6 +65,7 @@ void disjoint_snapshots::allow_snapshot(const ros::TimerEvent& e)
 {
 	std::cout << "Allowing a snapshot!" << std::endl;
 	snapshot = true;
+	pcd_snapshot = true;
 }
 
 // called by the synchronizer, always with depth + rgb
@@ -120,4 +121,18 @@ void disjoint_snapshots::image_callback(const sensor_msgs::Image::ConstPtr& dept
 	}
     
     ++counter;
+}
+
+void disjoint_snapshots::pointcloud_callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
+{
+	if (!pcd_snapshot) {
+		return;
+	}
+	pcd_snapshot = false;
+    pcl::PointCloud<pcl::PointXYZRGB> cloud;
+    pcl::fromROSMsg(*msg, cloud);
+	char buffer[250];
+    sprintf(buffer, "%s/cloud%06ld.pcd", folder.c_str(), pcd_counter);
+	pcl::io::savePCDFileBinary(buffer, cloud);
+	++pcd_counter;
 }
