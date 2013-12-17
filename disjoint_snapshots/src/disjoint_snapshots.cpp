@@ -1,49 +1,42 @@
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <boost/lexical_cast.hpp>
-#include <nav_msgs/Odometry.h>
-#include <Eigen/Dense>
-#include <opencv2/opencv.hpp>
-#include <cv_bridge/cv_bridge.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <math.h>
+#include "disjoint_snapshots.h"
 
-long int counter;
-std::string folder;
-
-double snapped_x, snapped_y;
-double snapped_angle;
-double x, y;
-double angle;
-double fov;
-double dist;
-
-void geometry_callback(const nav_msgs::Odometry::ConstPtr& msg)
+disjoint_snapshots::disjoint_snapshots(ros::NodeHandle& n, ros::ServiceClient& client, const std::string& folder, double dist) :
+	n(n), client(client), folder(folder), dist(dist), counter(0), snapshot(false), first(true)
 {
-    x = msg->pose.pose.position.x;
-    y = msg->pose.pose.position.y;
+	/*typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
+    message_filters::Subscriber<sensor_msgs::Image> depth_sub(n, "/head_xtion/depth/image_raw", 1);
+    message_filters::Subscriber<sensor_msgs::Image> rgb_sub(n, "/head_xtion/rgb/image_color", 1);
+    message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), depth_sub, rgb_sub);
+    sync.registerCallback(&disjoint_snapshots::image_callback, this);
+	ros::Subscriber sub = n.subscribe("/odom", 1, &disjoint_snapshots::geometry_callback, this);*/
+
+	//client = n.serviceClient<ap_msgs::PauseResumePatroller>("pause_resume_patroller");
+
+	// compute FOV for x
+	double cx = 326.0; // center in image plane for x
+	double fx = 566.0; // focal length for x
+	fov = 2.0*atan(cx/fx);
+}
+
+void disjoint_snapshots::geometry_callback(const nav_msgs::Odometry::ConstPtr& msg)
+{
+    double x = msg->pose.pose.position.x;
+    double y = msg->pose.pose.position.y;
     geometry_msgs::Quaternion odom_quat = msg->pose.pose.orientation;
     Eigen::Quaterniond q(odom_quat.x, odom_quat.y, odom_quat.z, odom_quat.w);
 	Eigen::Vector3d ea = q.matrix().eulerAngles(0, 1, 2);
-	angle = ea(0);
-}
+	double angle = ea(0);
 
-// called by the synchronizer, always with depth + rgb
-void image_callback(const sensor_msgs::Image::ConstPtr& depth_msg,
-                    const sensor_msgs::Image::ConstPtr& rgb_msg)
-{
-    double xd = x - snapped_x;
-    double yd = y - snapped_y;
-    double ad = fmod(fabs(angle - snapped_angle), M_PI); // think this through
-	
-    if (sqrt(xd*xd + yd*yd) < dist && ad < fov && counter > 0) {
-        return;
-    }
+	double xd = x - snapped_x;
+	double yd = y - snapped_y;
+	double ad = fmod(fabs(angle - snapped_angle), M_PI); // think this through
+
+	if (first) {
+		first = false;
+	}
+	else if (sqrt(xd*xd + yd*yd) < dist && ad < fov) {
+	    return;
+	}
 
 	std::cout << "Distance: " << sqrt(xd*xd + yd*yd) << std::endl;
 	std::cout << "Angle distance: " << ad << std::endl;
@@ -52,7 +45,37 @@ void image_callback(const sensor_msgs::Image::ConstPtr& depth_msg,
 	snapped_x = x;
 	snapped_y = y;
 	snapped_angle = angle;
-    
+	
+	ap_msgs::PauseResumePatroller srv;
+	bool success = client.call(srv);
+	std::cout << "Result: " << srv.response.result << std::endl;
+	if (!success) {
+	    ROS_ERROR("Couldn't pause the patroller because pause_resume_patroller service not available.");
+		return;
+	}
+	if (srv.response.result != "paused") {
+		ROS_ERROR("The patroller was resumed instead of paused.");
+		return;
+	}
+
+	timer = n.createTimer(ros::Duration(3.0), &disjoint_snapshots::allow_snapshot, this, true);
+}
+
+void disjoint_snapshots::allow_snapshot(const ros::TimerEvent& e)
+{
+	std::cout << "Allowing a snapshot!" << std::endl;
+	snapshot = true;
+}
+
+// called by the synchronizer, always with depth + rgb
+void disjoint_snapshots::image_callback(const sensor_msgs::Image::ConstPtr& depth_msg,
+                    const sensor_msgs::Image::ConstPtr& rgb_msg)
+{
+	if (!snapshot) {
+		return;
+	}
+	snapshot = false;
+
     // convert message to opencv images for saving
     boost::shared_ptr<sensor_msgs::Image> depth_tracked_object;
 	cv_bridge::CvImageConstPtr depth_cv_img_boost_ptr;
@@ -86,39 +109,15 @@ void image_callback(const sensor_msgs::Image::ConstPtr& depth_msg,
     
     sprintf(buffer, "%s/depth%06ld.png", folder.c_str(), counter);
     cv::imwrite(buffer, depth_cv_img_boost_ptr->image, compression);
+
+	ap_msgs::PauseResumePatroller srv;
+	if (!client.call(srv)) {
+		ROS_ERROR("Couldn't resume the patroller because pause_resume_patroller service not available.");
+	}
+	if (srv.response.result == "paused") {
+		ROS_INFO("Controller was not resumed, trying again!");
+		client.call(srv);
+	}
     
     ++counter;
-}
-
-int main(int argc, char** argv)
-{
-    ros::init(argc, argv, "disjoint_snapshots");
-	ros::NodeHandle n;
-	
-	// topic of input cloud
-    if (!n.hasParam("/disjoint_snapshots/folder")) {
-        ROS_ERROR("Could not find parameter folder.");
-        return -1;
-    }
-    n.getParam("/disjoint_snapshots/folder", folder);
-    
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
-    message_filters::Subscriber<sensor_msgs::Image> depth_sub(n, "/head_xtion/depth/image_raw", 1);
-    message_filters::Subscriber<sensor_msgs::Image> rgb_sub(n, "/head_xtion/rgb/image_color", 1);
-    message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), depth_sub, rgb_sub);
-    sync.registerCallback(&image_callback);
-	ros::Subscriber sub = n.subscribe("/odom", 1, &geometry_callback);
-    counter = 0;
-
-	// compute FOV for x
-	double cx = 326.0; // center in image plane for x
-	double fx = 566.0; // focal length for x
-	fov = 2.0*atan(cx/fx);
-
-	// at what distance should we capture a new snapshot?
-	dist = 2.0; // m
-    
-    ros::spin();
-	
-	return 0;
 }
