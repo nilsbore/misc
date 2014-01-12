@@ -139,7 +139,9 @@ void disjoint_snapshots::pointcloud_callback(const sensor_msgs::PointCloud2::Con
 	std::ofstream posfile;
 	sprintf(buffer, "%s/position%06ld.txt", folder.c_str(), pcd_counter);
     posfile.open(buffer);
-    posfile << x << " " << y << " " << angle << " " << quat_angle.transpose();
+    posfile << x << " " << y << " " << angle << " " <<
+			quat_angle.x() << " " << quat_angle.y() << " " <<
+			quat_angle.z() << " " << quat_angle.w();
     posfile.close();
 	
 	++pcd_counter;
