@@ -23,8 +23,8 @@ void disjoint_snapshots::geometry_callback(const nav_msgs::Odometry::ConstPtr& m
     double x = msg->pose.pose.position.x;
     double y = msg->pose.pose.position.y;
     geometry_msgs::Quaternion odom_quat = msg->pose.pose.orientation;
-    Eigen::Quaterniond q(odom_quat.x, odom_quat.y, odom_quat.z, odom_quat.w);
-	Eigen::Vector3d ea = q.matrix().eulerAngles(0, 1, 2);
+    quat_angle = Eigen::Quaterniond(odom_quat.x, odom_quat.y, odom_quat.z, odom_quat.w);
+	Eigen::Vector3d ea = quat_angle.matrix().eulerAngles(0, 1, 2);
 	double angle = ea(0);
 
 	double xd = x - snapped_x;
@@ -123,6 +123,7 @@ void disjoint_snapshots::image_callback(const sensor_msgs::Image::ConstPtr& dept
     ++counter;
 }
 
+// here we also save the current position to be able to draw it on the map
 void disjoint_snapshots::pointcloud_callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
 {
 	if (!pcd_snapshot) {
@@ -134,5 +135,12 @@ void disjoint_snapshots::pointcloud_callback(const sensor_msgs::PointCloud2::Con
 	char buffer[250];
     sprintf(buffer, "%s/cloud%06ld.pcd", folder.c_str(), pcd_counter);
 	pcl::io::savePCDFileBinary(buffer, cloud);
+	
+	std::ofstream posfile;
+	sprintf(buffer, "%s/position%06ld.txt", folder.c_str(), pcd_counter);
+    posfile.open(buffer);
+    posfile << x << " " << y << " " << angle << " " << quat_angle.transpose();
+    posfile.close();
+	
 	++pcd_counter;
 }

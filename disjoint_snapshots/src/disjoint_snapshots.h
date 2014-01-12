@@ -27,6 +27,7 @@ private:
 	double snapped_angle;
 	double x, y;
 	double angle;
+	Eigen::Quaterniond quat_angle;
 	double fov;
 	double dist;
 	bool snapshot;
