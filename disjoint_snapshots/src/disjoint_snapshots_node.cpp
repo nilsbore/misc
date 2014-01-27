@@ -22,7 +22,8 @@ int main(int argc, char** argv)
     message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), depth_sub, rgb_sub);
     sync.registerCallback(&disjoint_snapshots::image_callback, &d);
 	ros::Subscriber pcd_sub = n.subscribe("/chest_xtion/depth_registered/points", 1, &disjoint_snapshots::pointcloud_callback, &d);
-	ros::Subscriber sub = n.subscribe("/odom", 1, &disjoint_snapshots::geometry_callback, &d);
+	ros::Subscriber odom_sub = n.subscribe("/odom", 1, &disjoint_snapshots::geometry_callback, &d);
+	ros::Subscriber amcl_sub = n.subscribe("/amcl_pose", 1, &disjoint_snapshots::amcl_callback, &d);
 
 	std::cout << "Spinning..." << std::endl;
     

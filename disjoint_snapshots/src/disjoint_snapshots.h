@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -27,7 +28,9 @@ private:
 	double snapped_angle;
 	double x, y;
 	double angle;
-	Eigen::Quaterniond quat_angle;
+	double amcl_x, amcl_y;
+	double amcl_angle;
+	Eigen::Quaterniond amcl_quat;
 	double fov;
 	double dist;
 	bool snapshot;
@@ -36,12 +39,14 @@ private:
 	ros::Timer timer;
 	ros::NodeHandle& n;
 public:
+	void amcl_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
 	void geometry_callback(const nav_msgs::Odometry::ConstPtr& msg);
 	void allow_snapshot(const ros::TimerEvent& e);
 	void image_callback(const sensor_msgs::Image::ConstPtr& depth_msg,
                     	const sensor_msgs::Image::ConstPtr& rgb_msg);
 	void pointcloud_callback(const sensor_msgs::PointCloud2::ConstPtr& msg);
-	disjoint_snapshots(ros::NodeHandle& n, ros::ServiceClient& client, const std::string& folder, double dist);	
+	disjoint_snapshots(ros::NodeHandle& n, ros::ServiceClient& client, const std::string& folder, double dist);
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 };
 
 #endif // DISJOINT_SNAPSHOTS_H

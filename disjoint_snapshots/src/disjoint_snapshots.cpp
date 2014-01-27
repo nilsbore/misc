@@ -23,8 +23,8 @@ void disjoint_snapshots::geometry_callback(const nav_msgs::Odometry::ConstPtr& m
     double x = msg->pose.pose.position.x;
     double y = msg->pose.pose.position.y;
     geometry_msgs::Quaternion odom_quat = msg->pose.pose.orientation;
-    quat_angle = Eigen::Quaterniond(odom_quat.x, odom_quat.y, odom_quat.z, odom_quat.w);
-	Eigen::Vector3d ea = quat_angle.matrix().eulerAngles(0, 1, 2);
+    Eigen::Quaterniond q(odom_quat.x, odom_quat.y, odom_quat.z, odom_quat.w);
+	Eigen::Vector3d ea = q.matrix().eulerAngles(0, 1, 2);
 	double angle = ea(0);
 
 	double xd = x - snapped_x;
@@ -59,6 +59,16 @@ void disjoint_snapshots::geometry_callback(const nav_msgs::Odometry::ConstPtr& m
 	}
 
 	timer = n.createTimer(ros::Duration(3.0), &disjoint_snapshots::allow_snapshot, this, true);
+}
+
+void disjoint_snapshots::amcl_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
+{
+	amcl_x = msg->pose.pose.position.x;
+    amcl_y = msg->pose.pose.position.y;
+	geometry_msgs::Quaternion geom_quat = msg->pose.pose.orientation;
+	amcl_quat = Eigen::Quaterniond(geom_quat.x, geom_quat.y, geom_quat.z, geom_quat.w);
+	Eigen::Vector3d ea = amcl_quat.matrix().eulerAngles(0, 1, 2);
+	amcl_angle = ea(0);
 }
 
 void disjoint_snapshots::allow_snapshot(const ros::TimerEvent& e)
@@ -139,9 +149,9 @@ void disjoint_snapshots::pointcloud_callback(const sensor_msgs::PointCloud2::Con
 	std::ofstream posfile;
 	sprintf(buffer, "%s/position%06ld.txt", folder.c_str(), pcd_counter);
     posfile.open(buffer);
-    posfile << x << " " << y << " " << angle << " " <<
-			quat_angle.x() << " " << quat_angle.y() << " " <<
-			quat_angle.z() << " " << quat_angle.w();
+    posfile << amcl_x << " " << amcl_y << " " << amcl_angle << " " <<
+			amcl_quat.x() << " " << amcl_quat.y() << " " <<
+			amcl_quat.z() << " " << amcl_quat.w();
     posfile.close();
 	
 	++pcd_counter;
