@@ -21,6 +21,8 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+find_package(OpenCV REQUIRED)
+
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -105,6 +107,10 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+# spatial_primitives
+include_directories(/home/nbore/Workspace2/mapping_library/ransac_primitives/src)
+link_directories(/home/nbore/Workspace2/mapping_library/ransac_primitives/lib)
+
 ## Declare a cpp library
 # add_library(primitive_extraction
 #   src/${PROJECT_NAME}/primitive_extraction.cpp
@@ -121,6 +127,9 @@ add_dependencies(extraction primitive_extraction_generate_messages_cpp)
 target_link_libraries(extraction
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
+  ${OpenCV_LIBS}
+  primitive_extractor primitive_octree primitive_leaf primitive_visualizer
+base_primitive plane_primitive sphere_primitive cylinder_primitive
 )
 
 #############
