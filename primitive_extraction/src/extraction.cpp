@@ -1,8 +1,6 @@
 #include <iostream>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-//#include <pcl/io/pcd_io.h>
-//#include <pcl/filters/voxel_grid.h>
 
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_ros/point_cloud.h>
@@ -14,6 +12,53 @@
 
 #include "primitive_extraction/primitive.h"
 #include "primitive_extraction/primitive_array.h"
+
+#include <Eigen/Dense>
+
+ros::Publisher pub;
+
+void write_plane_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data)
+{
+    msg.type = "plane";
+}
+
+void write_cylinder_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data)
+{
+    msg.type = "cylinder";
+    Eigen::Vector3d x = data.segment<3>(3);
+    Eigen::Vector3d y(-x(1), x(0), 0);
+    y.normalize();
+    Eigen::Vector3d z = x.cross(y);
+    z.normalize();
+    Eigen::Matrix3d R;
+    R.col(0) = x;
+    R.col(1) = y;
+    R.col(2) = z;
+    Eigen::Quaterniond quat(R);
+    msg.pose.orientation.x = quat.x();
+    msg.pose.orientation.y = quat.y();
+    msg.pose.orientation.z = quat.z();
+    msg.pose.orientation.w = quat.w();
+    msg.params.resize(2);
+    msg.params[0] = data(6); // radius
+    msg.params[1] = data(7); // height
+}
+
+void write_sphere_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data)
+{
+    msg.type = "sphere";
+    msg.pose.position.x = data(0);
+    msg.pose.position.y = data(1);
+    msg.pose.position.z = data(2);
+    Eigen::Quaterniond quat;
+    quat.setIdentity();
+    msg.pose.orientation.x = quat.x();
+    msg.pose.orientation.y = quat.y();
+    msg.pose.orientation.z = quat.z();
+    msg.pose.orientation.w = quat.w();
+    msg.params.resize(1);
+    msg.params[0] = data(3); // radius
+}
 
 void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
 {
@@ -42,6 +87,23 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
 
     std::cout << "The algorithm has finished..." << std::endl;
     
+    for (int i = 0; i < extracted.size(); ++i) {
+        primitive_extraction::primitive msg;
+        Eigen::VectorXd data;
+        extracted[i]->shape_data(data);
+        switch (extracted[i]->get_shape()) {
+        case base_primitive::PLANE:
+            write_plane_msg(msg, data);
+            break;
+        case base_primitive::CYLINDER:
+            write_cylinder_msg(msg, data);
+            break;
+        case base_primitive::SPHERE:
+            write_sphere_msg(msg, data);
+            break;
+        }
+    }
+    
 
 }
 
@@ -52,6 +114,9 @@ int main(int argc, char** argv)
 	
     std::string camera_topic = "/head_xtion";
 	ros::Subscriber sub = n.subscribe(camera_topic + "/depth_registered/points", 1, callback);
+	
+	std::string output = "/primitives";
+	pub = n.advertise<primitive_extraction::primitive_array>(output, 1);
     
     ros::spin();
     
