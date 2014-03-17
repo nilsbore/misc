@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   geometry_msgs
   message_generation
+  visualization_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -118,10 +119,12 @@ link_directories(/home/nbore/Workspace2/mapping_library/ransac_primitives/lib)
 
 ## Declare a cpp executable
 add_executable(extraction src/extraction.cpp)
+add_executable(primitives_to_markers src/primitives_to_markers.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(extraction primitive_extraction_generate_messages_cpp)
+add_dependencies(primitives_to_markers primitive_extraction_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(extraction
@@ -130,6 +133,10 @@ target_link_libraries(extraction
   ${OpenCV_LIBS}
   primitive_extractor primitive_octree primitive_leaf primitive_visualizer
 base_primitive plane_primitive sphere_primitive cylinder_primitive
+)
+
+target_link_libraries(primitives_to_markers
+  ${catkin_LIBRARIES}
 )
 
 #############

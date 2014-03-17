@@ -20,12 +20,25 @@ ros::Publisher pub;
 void write_plane_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data)
 {
     msg.type = "plane";
+    msg.pose.position.x = data(6);
+    msg.pose.position.y = data(7);
+    msg.pose.position.z = data(8);
+    msg.pose.orientation.x = data(9);
+    msg.pose.orientation.y = data(10);
+    msg.pose.orientation.z = data(11);
+    msg.pose.orientation.w = data(12);
+    msg.params.resize(2);
+    msg.params[0] = data(4);
+    msg.params[1] = data(5); 
 }
 
 void write_cylinder_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data)
 {
     msg.type = "cylinder";
-    Eigen::Vector3d x = data.segment<3>(3);
+    msg.pose.position.x = data(3);
+    msg.pose.position.y = data(4);
+    msg.pose.position.z = data(5);
+    Eigen::Vector3d x = data.segment<3>(0);
     Eigen::Vector3d y(-x(1), x(0), 0);
     y.normalize();
     Eigen::Vector3d z = x.cross(y);
@@ -87,6 +100,9 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
 
     std::cout << "The algorithm has finished..." << std::endl;
     
+    primitive_extraction::primitive_array msg_array;
+    msg_array.primitives.resize(extracted.size());
+    
     for (int i = 0; i < extracted.size(); ++i) {
         primitive_extraction::primitive msg;
         Eigen::VectorXd data;
@@ -102,9 +118,10 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
             write_sphere_msg(msg, data);
             break;
         }
+        msg_array.primitives[i] = msg;
     }
     
-
+    pub.publish(msg_array);
 }
 
 int main(int argc, char** argv)
