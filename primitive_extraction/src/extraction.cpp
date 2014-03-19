@@ -17,7 +17,7 @@
 
 ros::Publisher pub;
 
-void write_plane_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data)
+void write_plane_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data, std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& points)
 {
     msg.type = "plane";
     msg.pose.position.x = data(6);
@@ -29,7 +29,13 @@ void write_plane_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd
     msg.pose.orientation.w = data(12);
     msg.params.resize(2);
     msg.params[0] = data(4);
-    msg.params[1] = data(5); 
+    msg.params[1] = data(5);
+    msg.points.resize(points.size());
+    for (int i = 0; i < points.size(); ++i) {
+        msg.points[i].x = points[i](0);
+        msg.points[i].y = points[i](1);
+        msg.points[i].z = points[i](2);
+    }
 }
 
 void write_cylinder_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data)
@@ -106,10 +112,12 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
     for (int i = 0; i < extracted.size(); ++i) {
         primitive_extraction::primitive msg;
         Eigen::VectorXd data;
+        std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > points;
         extracted[i]->shape_data(data);
         switch (extracted[i]->get_shape()) {
-        case base_primitive::PLANE:
-            write_plane_msg(msg, data);
+        case base_primitive::PLANE: 
+            extracted[i]->shape_points(points);
+            write_plane_msg(msg, data, points);
             break;
         case base_primitive::CYLINDER:
             write_cylinder_msg(msg, data);
