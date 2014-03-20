@@ -1,0 +1,11 @@
+<launch>
+
+	<node pkg="primitive_extraction" type="extraction" name="extraction" output="screen">
+	
+    </node>
+    
+    <node pkg="primitive_extraction" type="primitives_to_markers" name="primitives_to_markers" output="screen">
+    
+    </node>
+
+</launch>
