@@ -85,7 +85,7 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
     pcl::fromROSMsg(*msg, *cloud);
     
     primitive_params params;
-    params.octree_res = 0.04;
+    /*params.octree_res = 0.04;
     params.normal_neigbourhood = 0.015;
     params.inlier_threshold = 0.015;
     params.angle_threshold = 0.4;
@@ -93,12 +93,21 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
     params.min_shape = 3000;
     params.inlier_min = params.min_shape;
     params.connectedness_res = 0.01;
-    params.distance_threshold = 2.0;
+    params.distance_threshold = 2.0;*/
+    params.octree_res = 0.5;//0.04;
+    params.normal_neigbourhood = 0.04;
+    params.inlier_threshold = 0.04;
+    params.angle_threshold = 0.4;
+    params.add_threshold = 0.01;//0.001;
+    params.min_shape = 2000;
+    params.inlier_min = params.min_shape;
+    params.connectedness_res = 0.03;
+    params.distance_threshold = 4.0;
     
     std::vector<base_primitive*> primitives;
     primitives.push_back(new plane_primitive());
-    primitives.push_back(new sphere_primitive());
-    primitives.push_back(new cylinder_primitive());
+    //primitives.push_back(new sphere_primitive());
+    //primitives.push_back(new cylinder_primitive());
 
     primitive_extractor extractor(cloud, primitives, params, NULL);
     std::vector<base_primitive*> extracted;
@@ -138,7 +147,8 @@ int main(int argc, char** argv)
 	ros::NodeHandle n;
 	
     std::string camera_topic = "/head_xtion";
-	ros::Subscriber sub = n.subscribe(camera_topic + "/depth_registered/points", 1, callback);
+	//ros::Subscriber sub = n.subscribe(camera_topic + "/depth_registered/points", 1, callback);
+	ros::Subscriber sub = n.subscribe("/cloud_pcd", 1, callback);
 	
 	std::string output = "/primitives";
 	pub = n.advertise<primitive_extraction::primitive_array>(output, 1);
