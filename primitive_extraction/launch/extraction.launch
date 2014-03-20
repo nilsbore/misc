@@ -1,6 +1,5 @@
 <launch>
 
-    <arg name="camera" value="/head_xtion"/>
     <arg name="primitive_topic" value="/primitives"/>
 
 	<node pkg="primitive_extraction" type="extraction" name="extraction" output="screen">
@@ -23,7 +22,6 @@
     <node pkg="primitive_extraction" type="primitives_to_markers" name="primitives_to_markers" output="screen">
         <param name="input" type="string" value="$(arg primitive_topic)"/>
         <param name="output" type="string" value="/primitive_marker_array"/>
-        <param name="output_frame" type="string" value="$(arg camera)_rgb_optical_frame"/>
     </node>
 
 </launch>

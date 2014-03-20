@@ -12,7 +12,6 @@
 
 ros::Publisher pub;
 int previous_n;
-std::string frame;
 
 void write_plane_marker(visualization_msgs::Marker& marker, const primitive_extraction::primitive& primitive)
 {
@@ -92,6 +91,7 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
     
     std::cout << "Tjena!" << std::endl;
     int n = msg->primitives.size();
+    std::string camera_frame = msg->camera_frame;
     visualization_msgs::MarkerArray markers;
     
     if (n >= previous_n) {
@@ -103,7 +103,7 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
     
     for (int i = 0; i < n; ++i) {
         visualization_msgs::Marker marker;
-        marker.header.frame_id = frame;
+        marker.header.frame_id = camera_frame;
         marker.header.stamp = ros::Time();
         marker.ns = "my_namespace"; // what's this for?
         marker.id = i + 1;
@@ -123,7 +123,7 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
     
     for (int i = n; i < previous_n; ++i) {
         markers.markers[i].action = visualization_msgs::Marker::DELETE;
-        markers.markers[i].header.frame_id = "head_xtion_rgb_optical_frame";
+        markers.markers[i].header.frame_id = camera_frame;
         markers.markers[i].header.stamp = ros::Time();
         markers.markers[i].ns = "my_namespace"; // what's this for?
         markers.markers[i].id = i + 1;
@@ -142,7 +142,6 @@ int main(int argc, char** argv)
     // Use a private node handle so that multiple instances of the node can be run simultaneously
     // while using different parameters.
 	ros::NodeHandle pn("~");
-	pn.param<std::string>("output_frame", frame, std::string("/head_xtion_rgb_optical_frame"));
 	std::string input;
 	pn.param<std::string>("input", input, std::string("/primitives"));
 	std::string output;

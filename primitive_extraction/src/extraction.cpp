@@ -94,6 +94,7 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
     
     primitive_extraction::primitive_array msg_array;
     msg_array.primitives.resize(extracted.size());
+    msg_array.camera_frame = msg->header.frame_id;
     
     for (int i = 0; i < extracted.size(); ++i) {
         primitive_extraction::primitive msg;
