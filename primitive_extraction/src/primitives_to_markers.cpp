@@ -12,6 +12,7 @@
 
 ros::Publisher pub;
 int previous_n;
+std::string frame;
 
 void write_plane_marker(visualization_msgs::Marker& marker, const primitive_extraction::primitive& primitive)
 {
@@ -102,7 +103,7 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
     
     for (int i = 0; i < n; ++i) {
         visualization_msgs::Marker marker;
-        marker.header.frame_id = "head_xtion_rgb_optical_frame";
+        marker.header.frame_id = frame;
         marker.header.stamp = ros::Time();
         marker.ns = "my_namespace"; // what's this for?
         marker.id = i + 1;
@@ -135,12 +136,19 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "primitives_to_markers");
-	ros::NodeHandle n;
+    ros::NodeHandle n;
+    
+    // Initialize node parameters from launch file or command line.
+    // Use a private node handle so that multiple instances of the node can be run simultaneously
+    // while using different parameters.
+	ros::NodeHandle pn("~");
+	pn.param<std::string>("output_frame", frame, std::string("/head_xtion_rgb_optical_frame"));
+	std::string input;
+	pn.param<std::string>("input", input, std::string("/primitives"));
+	std::string output;
+	pn.param<std::string>("output", output, std::string("/primitive_marker_array"));
 	
-    std::string input = "/primitives";
 	ros::Subscriber sub = n.subscribe(input, 1, callback);
-	
-	std::string output = "/primitive_marker_array";
 	pub = n.advertise<visualization_msgs::MarkerArray>(output, 1);
 	
 	previous_n = 0;

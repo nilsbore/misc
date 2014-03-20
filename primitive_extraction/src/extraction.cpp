@@ -16,6 +16,8 @@
 #include <Eigen/Dense>
 
 ros::Publisher pub;
+primitive_params params;
+std::vector<base_primitive*> primitives;
 
 void write_plane_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd& data, std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> >& points)
 {
@@ -83,31 +85,6 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*msg, *cloud);
-    
-    primitive_params params;
-    /*params.octree_res = 0.04;
-    params.normal_neigbourhood = 0.015;
-    params.inlier_threshold = 0.015;
-    params.angle_threshold = 0.4;
-    params.add_threshold = 0.01;
-    params.min_shape = 3000;
-    params.inlier_min = params.min_shape;
-    params.connectedness_res = 0.01;
-    params.distance_threshold = 2.0;*/
-    params.octree_res = 0.5;//0.04;
-    params.normal_neigbourhood = 0.04;
-    params.inlier_threshold = 0.04;
-    params.angle_threshold = 0.4;
-    params.add_threshold = 0.01;//0.001;
-    params.min_shape = 2000;
-    params.inlier_min = params.min_shape;
-    params.connectedness_res = 0.03;
-    params.distance_threshold = 4.0;
-    
-    std::vector<base_primitive*> primitives;
-    primitives.push_back(new plane_primitive());
-    //primitives.push_back(new sphere_primitive());
-    //primitives.push_back(new cylinder_primitive());
 
     primitive_extractor extractor(cloud, primitives, params, NULL);
     std::vector<base_primitive*> extracted;
@@ -144,13 +121,50 @@ void callback(const sensor_msgs::PointCloud2::ConstPtr& msg)
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "extraction");
+    // Initialize node parameters from launch file or command line.
+    // Use a private node handle so that multiple instances of the node can be run simultaneously
+    // while using different parameters.
 	ros::NodeHandle n;
 	
-    std::string camera_topic = "/head_xtion";
-	//ros::Subscriber sub = n.subscribe(camera_topic + "/depth_registered/points", 1, callback);
-	ros::Subscriber sub = n.subscribe("/cloud_pcd", 1, callback);
+	/*params.octree_res = 0.04;
+    params.normal_neigbourhood = 0.015;
+    params.inlier_threshold = 0.015;
+    params.angle_threshold = 0.4;
+    params.add_threshold = 0.01;
+    params.min_shape = 3000;
+    params.inlier_min = params.min_shape;
+    params.connectedness_res = 0.01;
+    params.distance_threshold = 2.0;*/
+    ros::NodeHandle pn("~");
+    pn.param<double>("octree_leaf_size", params.octree_res, 0.5);
+    pn.param<double>("normal_neigbourhood", params.normal_neigbourhood, 0.04);
+    pn.param<double>("inlier_threshold", params.inlier_threshold, 0.04);
+    pn.param<double>("angle_threshold", params.angle_threshold, 0.4);
+    pn.param<double>("error_add_probability", params.add_threshold, 0.01);
+    pn.param<int>("min_inliers", params.inlier_min, 2000);
+    pn.param<int>("min_terminate", params.min_shape, 2000);
+    pn.param<double>("connectedness_dist", params.connectedness_res, 0.03);
+    pn.param<double>("distance_threshold", params.distance_threshold, 4.0);
+    bool extract_planes, extract_cylinders, extract_spheres;
+    pn.param<bool>("extract_planes", extract_planes, true);
+    pn.param<bool>("extract_cylinders", extract_cylinders, true);
+    pn.param<bool>("extract_spheres", extract_spheres, true);
+    std::string input;
+    pn.param<std::string>("input", input, std::string("/head_xtion/depth_registered/points"));
+    std::string output;
+    pn.param<std::string>("output", output, std::string("/primitives"));
+    
+    if (extract_planes) {
+        primitives.push_back(new plane_primitive());
+    }
+    if (extract_cylinders) {
+        primitives.push_back(new cylinder_primitive());
+    }
+    if (extract_spheres) {
+        primitives.push_back(new sphere_primitive());
+    }
 	
-	std::string output = "/primitives";
+	ros::Subscriber sub = n.subscribe(input, 1, callback);
 	pub = n.advertise<primitive_extraction::primitive_array>(output, 1);
     
     ros::spin();
