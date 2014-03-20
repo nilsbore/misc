@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 
 ros::Publisher pub;
+int previous_n;
 
 void write_plane_marker(visualization_msgs::Marker& marker, const primitive_extraction::primitive& primitive)
 {
@@ -91,7 +92,13 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
     std::cout << "Tjena!" << std::endl;
     int n = msg->primitives.size();
     visualization_msgs::MarkerArray markers;
-    markers.markers.resize(n);
+    
+    if (n >= previous_n) {
+        markers.markers.resize(n);
+    }
+    else {
+        markers.markers.resize(previous_n);
+    }
     
     for (int i = 0; i < n; ++i) {
         visualization_msgs::Marker marker;
@@ -113,6 +120,15 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
         markers.markers[i] = marker;
     }
     
+    for (int i = n; i < previous_n; ++i) {
+        markers.markers[i].action = visualization_msgs::Marker::DELETE;
+        markers.markers[i].header.frame_id = "head_xtion_rgb_optical_frame";
+        markers.markers[i].header.stamp = ros::Time();
+        markers.markers[i].ns = "my_namespace"; // what's this for?
+        markers.markers[i].id = i + 1;
+    }
+    
+    previous_n = n;
     pub.publish(markers);
 }
 
@@ -126,6 +142,8 @@ int main(int argc, char** argv)
 	
 	std::string output = "/primitive_marker_array";
 	pub = n.advertise<visualization_msgs::MarkerArray>(output, 1);
+	
+	previous_n = 0;
     
     ros::spin();
     
