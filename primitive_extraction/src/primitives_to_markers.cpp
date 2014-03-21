@@ -15,8 +15,8 @@ int previous_n;
 
 void write_plane_marker(visualization_msgs::Marker& marker, const primitive_extraction::primitive& primitive)
 {
-    //marker.type = visualization_msgs::Marker::CUBE;
-    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.type = visualization_msgs::Marker::CUBE;
+    //marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.pose.position.x = primitive.pose.position.x;
     marker.pose.position.y = primitive.pose.position.y;
     marker.pose.position.z = primitive.pose.position.z;
@@ -24,21 +24,21 @@ void write_plane_marker(visualization_msgs::Marker& marker, const primitive_extr
     marker.pose.orientation.y = primitive.pose.orientation.y;
     marker.pose.orientation.z = primitive.pose.orientation.z;
     marker.pose.orientation.w = primitive.pose.orientation.w;
-    marker.scale.x = 0.02;
-    //marker.scale.x = 0.01;
-    //marker.scale.y = primitive.params[0];
-    //marker.scale.z = primitive.params[1];
+    //marker.scale.x = 0.02;
+    marker.scale.x = 0.01;
+    marker.scale.y = primitive.params[0];
+    marker.scale.z = primitive.params[1];
     marker.color.a = 1.0;
     marker.color.r = 1.0;
     marker.color.g = 0.0;
     marker.color.b = 0.0;
-    marker.points.resize(2*primitive.points.size());
+    /*marker.points.resize(2*primitive.points.size());
     for (int i = 0; i < primitive.points.size()-1 ; ++i) {
         marker.points[2*i+2] = primitive.points[i];
         marker.points[2*i+3] = primitive.points[i+1];
     }
     marker.points[0] = primitive.points[primitive.points.size() - 1];
-    marker.points[1] = primitive.points[0];
+    marker.points[1] = primitive.points[0];*/
 }
 
 void write_cylinder_marker(visualization_msgs::Marker& marker, const primitive_extraction::primitive& primitive)
