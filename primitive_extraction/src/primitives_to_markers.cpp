@@ -12,33 +12,52 @@
 
 ros::Publisher pub;
 int previous_n;
+bool display_plane_box;
+double plane_r;
+double plane_g;
+double plane_b;
 
 void write_plane_marker(visualization_msgs::Marker& marker, const primitive_extraction::primitive& primitive)
 {
-    marker.type = visualization_msgs::Marker::CUBE;
-    //marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.pose.position.x = primitive.pose.position.x;
-    marker.pose.position.y = primitive.pose.position.y;
-    marker.pose.position.z = primitive.pose.position.z;
-    marker.pose.orientation.x = primitive.pose.orientation.x;
-    marker.pose.orientation.y = primitive.pose.orientation.y;
-    marker.pose.orientation.z = primitive.pose.orientation.z;
-    marker.pose.orientation.w = primitive.pose.orientation.w;
-    //marker.scale.x = 0.02;
-    marker.scale.x = 0.01;
-    marker.scale.y = primitive.params[0];
-    marker.scale.z = primitive.params[1];
-    marker.color.a = 1.0;
-    marker.color.r = 1.0;
-    marker.color.g = 0.0;
-    marker.color.b = 0.0;
-    /*marker.points.resize(2*primitive.points.size());
-    for (int i = 0; i < primitive.points.size()-1 ; ++i) {
-        marker.points[2*i+2] = primitive.points[i];
-        marker.points[2*i+3] = primitive.points[i+1];
+    if (display_plane_box) {
+        marker.type = visualization_msgs::Marker::CUBE;
+        marker.pose.position.x = primitive.pose.position.x;
+        marker.pose.position.y = primitive.pose.position.y;
+        marker.pose.position.z = primitive.pose.position.z;
+        marker.pose.orientation.x = primitive.pose.orientation.x;
+        marker.pose.orientation.y = primitive.pose.orientation.y;
+        marker.pose.orientation.z = primitive.pose.orientation.z;
+        marker.pose.orientation.w = primitive.pose.orientation.w;
+        marker.scale.x = 0.01;
+        marker.scale.y = primitive.params[0];
+        marker.scale.z = primitive.params[1];
     }
-    marker.points[0] = primitive.points[primitive.points.size() - 1];
-    marker.points[1] = primitive.points[0];*/
+    else {
+        marker.type = visualization_msgs::Marker::LINE_STRIP;
+        marker.pose.position.x = 0.0;
+        marker.pose.position.y = 0.0;
+        marker.pose.position.z = 0.0;
+        Eigen::Quaterniond quat;
+        quat.setIdentity();
+        marker.pose.orientation.x = quat.x();
+        marker.pose.orientation.y = quat.y();
+        marker.pose.orientation.z = quat.z();
+        marker.pose.orientation.w = quat.w();
+        marker.scale.x = 0.02;
+        marker.points.resize(2*primitive.points.size());
+        for (int i = 0; i < primitive.points.size()-1 ; ++i) {
+            marker.points[2*i+2] = primitive.points[i];
+            marker.points[2*i+3] = primitive.points[i+1];
+        }
+        marker.points[0] = primitive.points[primitive.points.size() - 1];
+        marker.points[1] = primitive.points[0];
+    }
+    
+    marker.color.a = 1.0;
+    marker.color.r = plane_r;
+    marker.color.g = plane_g;
+    marker.color.b = plane_b;
+    
 }
 
 void write_cylinder_marker(visualization_msgs::Marker& marker, const primitive_extraction::primitive& primitive)
@@ -146,6 +165,10 @@ int main(int argc, char** argv)
 	pn.param<std::string>("input", input, std::string("/primitives"));
 	std::string output;
 	pn.param<std::string>("output", output, std::string("/primitive_marker_array"));
+	pn.param<bool>("display_plane_box", display_plane_box, false);
+	pn.param<double>("plane_r", plane_r, 1.0);
+	pn.param<double>("plane_g", plane_g, 0.0);
+	pn.param<double>("plane_b", plane_b, 0.0);
 	
 	ros::Subscriber sub = n.subscribe(input, 1, callback);
 	pub = n.advertise<visualization_msgs::MarkerArray>(output, 1);

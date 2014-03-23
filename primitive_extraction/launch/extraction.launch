@@ -22,6 +22,7 @@
     <node pkg="primitive_extraction" type="primitives_to_markers" name="primitives_to_markers" output="screen">
         <param name="input" type="string" value="$(arg primitive_topic)"/>
         <param name="output" type="string" value="/primitive_marker_array"/>
+        <param name="display_plane_box" type="bool" value="false"/>
     </node>
 
 </launch>

@@ -13,7 +13,10 @@
     <node pkg="primitive_extraction" type="primitives_to_markers" name="tables_to_markers" output="screen">
         <param name="input" type="string" value="$(arg table_topic)"/>
         <param name="output" type="string" value="/table_marker_array"/>
-        <param name="display_plane_box" type="bool" value="true"/>
+        <param name="display_plane_box" type="bool" value="false"/>
+        <param name="plane_r" type="double" value="0.0"/>
+        <param name="plane_g" type="double" value="0.0"/>
+        <param name="plane_b" type="double" value="1.0"/>
     </node>
 
 </launch>

@@ -29,9 +29,14 @@ void write_plane_msg(primitive_extraction::primitive& msg, const Eigen::VectorXd
     msg.pose.orientation.y = data(10);
     msg.pose.orientation.z = data(11);
     msg.pose.orientation.w = data(12);
-    msg.params.resize(2);
+    msg.params.resize(6);
     msg.params[0] = data(4);
     msg.params[1] = data(5);
+    msg.params[2] = data(0);
+    msg.params[3] = data(1);
+    msg.params[4] = data(2);
+    msg.params[5] = data(3);
+    //std::cout << "P: " << data.segment<4>(0).transpose() << std::endl;
     msg.points.resize(points.size());
     for (int i = 0; i < points.size(); ++i) {
         msg.points[i].x = points[i](0);
