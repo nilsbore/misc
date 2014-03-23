@@ -1,0 +1,19 @@
+<launch>
+
+    <arg name="table_topic" value="/tables"/>
+
+    <include file="$(find primitive_extraction)/launch/extraction.launch">
+    
+    </include>
+    
+    <node pkg="table_detection" type="detection" name="detection" output="screen">
+    
+    </node>
+    
+    <node pkg="primitive_extraction" type="primitives_to_markers" name="tables_to_markers" output="screen">
+        <param name="input" type="string" value="$(arg table_topic)"/>
+        <param name="output" type="string" value="/table_marker_array"/>
+        <param name="display_plane_box" type="bool" value="true"/>
+    </node>
+
+</launch>
