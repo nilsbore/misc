@@ -4,8 +4,8 @@
   <version>0.0.1</version>
   <description>
       This package contains nodes and launch files for extracting primitives
-      from 3d point cloud data. The approach is based on the paper "3D Ransac
-      for Point Cloud Shape Detection" by R. Schnabel et al. The approach
+      from 3d point cloud data. The approach is based on the paper "Efficient
+      Ransac for Point Cloud Shape Detection" by R. Schnabel et al. The approach
       is able to segment a cloud into planes, cylinders and spheres.
   </description>
 
