@@ -85,6 +85,7 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
         }
         
         double ratio = minside/maxside;
+        //double ratio = p.params[0] > p.params[1] ? p.params[1]/p.params[0] : p.params[0]/p.params[1]; 
         if (ratio < min_side_ratio) {
             std::cout << "Stopped because of ratio: " << ratio << std::endl;
             continue;

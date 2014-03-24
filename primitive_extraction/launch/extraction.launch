@@ -1,24 +1,45 @@
+<!-- Launch primitive extraction from point cloud and visualization -->
 <launch>
 
-    <arg name="primitive_topic" value="/primitives"/>
+    <!-- The topic of the input cloud to segment into primitives -->
+    <arg name="cloud"/>
+    <!-- The topic to publish the resulting found primitives on -->
+    <arg name="primitive_topic" default="/primitives"/>
+    <!-- Choose which types of primitives to extract -->
+    <arg name="extract_planes" default="true"/>
+    <arg name="extract_cylinders" default="true"/>
+    <arg name="extract_spheres" default="true"/>
 
+    <!-- Launch the primitive extraction -->
 	<node pkg="primitive_extraction" type="extraction" name="extraction" output="screen">
+	    <!-- The size of the octree nodes, mainly influences speed -->
 	    <param name="octree_leaf_size" type="double" value="0.5"/>
+	    <!-- The size of the neighbourhood used to compute normals -->
 	    <param name="normal_neigbourhood" type="double" value="0.04"/>
+	    <!-- Largest distance from primitive for a point to be inlier -->
 	    <param name="inlier_threshold" type="double" value="0.04"/>
+	    <!-- The largest allowed deviation of point normal from surface normal -->
 	    <param name="angle_threshold" type="double" value="0.4"/>
+	    <!-- The probability of extracting a primitive which is not the largest -->
 	    <param name="error_add_probability" type="double" value="0.01"/>
+	    <!-- Do not consider any shapes with fewer inliers than this -->
 	    <param name="min_inliers" type="int" value="2000"/>
+	    <!-- Terminate when no shapes larger than this are left -->
 	    <param name="min_terminate" type="int" value="2000"/>
+	    <!-- Discretization of connectedness on primitive surfaces -->
+	    <!-- Used to extract the largest connected region -->
 	    <param name="connectedness_dist" type="double" value="0.03"/>
+	    <!-- Do not consider any points further away from the camera than this -->
 	    <param name="distance_threshold" type="double" value="4.0"/>
-	    <param name="extract_planes" type="bool" value="true"/>
-	    <param name="extract_cylinders" type="bool" value="false"/>
-	    <param name="extract_spheres" type="bool" value="false"/>
-	    <param name="input" type="string" value="cloud_pcd"/>
+	    <!-- Choose which types of primitives to extract -->
+	    <param name="extract_planes" type="bool" value="$(arg extract_planes)"/>
+	    <param name="extract_cylinders" type="bool" value="$(arg extract_cylinders)"/>
+	    <param name="extract_spheres" type="bool" value="$(arg extract_spheres)"/>
+	    <param name="input" type="string" value="$(arg cloud)"/>
 	    <param name="output" type="string" value="$(arg primitive_topic)"/>
     </node>
     
+    <!-- Visualize the extracted primitives with a marker array -->
     <node pkg="primitive_extraction" type="primitives_to_markers" name="primitives_to_markers" output="screen">
         <param name="input" type="string" value="$(arg primitive_topic)"/>
         <param name="output" type="string" value="/primitive_marker_array"/>
