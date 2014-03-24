@@ -80,7 +80,7 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
         }
         
         double ratio = minside/maxside;
-        if (ratio < 0.4) {
+        if (ratio < 0.25) {
             std::cout << "Stopped because of ratio: " << ratio << std::endl;
             continue;
         }
