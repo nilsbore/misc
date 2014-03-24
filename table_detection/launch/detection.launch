@@ -7,7 +7,13 @@
     </include>
     
     <node pkg="table_detection" type="detection" name="detection" output="screen">
-    
+        <param name="min_height" type="double" value="0.55"/>
+        <param name="max_height" type="double" value="1.1"/>
+        <param name="max_angle" type="double" value="0.314"/>
+        <param name="min_side_ratio" type="double" value="0.25"/>
+        <param name="min_area" type="double" value="0.3"/>
+        <param name="input" type="string" value="/primitives"/>
+        <param name="output" type="string" value="$(arg table_topic)"/>
     </node>
     
     <node pkg="primitive_extraction" type="primitives_to_markers" name="tables_to_markers" output="screen">

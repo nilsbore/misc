@@ -8,6 +8,11 @@
 #include <Eigen/Dense>
 
 ros::Publisher pub;
+double min_height;
+double max_height;
+double max_angle;
+double min_side_ratio;
+double min_area;
 
 double compute_plane_area(std::vector<geometry_msgs::Point>& hull)
 {
@@ -48,7 +53,7 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
         
         // check normal
         double alpha = acos(fabs(p.params[4]));
-        if (alpha > M_PI/10.0) {
+        if (alpha > max_angle) {
             std::cout << "Stopped because of angle: " << alpha << std::endl;
             continue;
         }
@@ -56,14 +61,14 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
         double camera_height = 0.0;
         // check height
         double height = camera_height + p.pose.position.z;
-        if (height < 0.55 || height > 1.1) {
+        if (height < min_height || height > max_height) {
             std::cout << "Stopped because of height: " << height << std::endl;
             continue;
         }
         
         // check size
         double area = compute_plane_area(p.points);
-        if (area < 0.3) {
+        if (area < min_area) {
             std::cout << "Stopped because of area: " << area << std::endl;
             continue;
         }
@@ -80,7 +85,7 @@ void callback(const primitive_extraction::primitive_array::ConstPtr& msg)
         }
         
         double ratio = minside/maxside;
-        if (ratio < 0.25) {
+        if (ratio < min_side_ratio) {
             std::cout << "Stopped because of ratio: " << ratio << std::endl;
             continue;
         }
@@ -97,10 +102,19 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "detection");
     ros::NodeHandle n;
+    
+    ros::NodeHandle pn("~");
+    pn.param<double>("min_height", min_height, 0.55);
+    pn.param<double>("max_height", max_height, 1.1);
+    pn.param<double>("max_angle", max_angle, 0.314);
+    pn.param<double>("min_side_ration", min_side_ratio, 0.25);
+    pn.param<double>("min_area", min_area, 0.3);
 	
-	std::string input = "/primitives";
+	std::string input;
+	pn.param<std::string>("input", input, std::string("/primitives"));
 	ros::Subscriber sub = n.subscribe(input, 1, callback);
-	std::string output = "/tables";
+	std::string output;
+	pn.param<std::string>("output", output, std::string("/tables"));
 	pub = n.advertise<primitive_extraction::primitive_array>(output, 1);
     
     ros::spin();
